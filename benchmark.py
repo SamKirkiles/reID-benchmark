@@ -1,6 +1,7 @@
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
+from torch.utils.data import Dataset, DataLoader
 
 from model import Model 
 from model_wrapper import ModelWrapper
@@ -9,8 +10,9 @@ from reid_model import ReIDModel
 
 def main():
 
-	train_dir ='/home/skirki/Desktop/Market-1501/Market-1501-v15.09.15/bounding_box_train'
+	train_dir ='/home/skirki/Desktop/Market-1501/'
 
+	# Preprocessing
 	train_dataset = datasets.ImageFolder(
 		train_dir,
 		transforms.Compose([
@@ -18,9 +20,13 @@ def main():
 			transforms.ToTensor()
 		]))
 
-
+	#ReIDModel Class
 	model = ReIDModel(version='huanghoujing')
-	model.forward()
+
+	eval_loader = DataLoader(train_dataset, batch_size=4,shuffle=True)
+
+	for x,y in enumerate(eval_loader):
+		print(x)
 
 if __name__ == "__main__": main()
 
