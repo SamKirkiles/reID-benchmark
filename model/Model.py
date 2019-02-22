@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-
 from .resnet import resnet50
 
+torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 class Model(nn.Module):
   def __init__(self, local_conv_out_channels=128, num_classes=None):
@@ -17,8 +17,8 @@ class Model(nn.Module):
 
     if num_classes is not None:
       self.fc = nn.Linear(planes, num_classes)
-      init.normal(self.fc.weight, std=0.001)
-      init.constant(self.fc.bias, 0)
+      init.normal_(self.fc.weight, std=0.001)
+      init.constant_(self.fc.bias, 0)
 
   def forward(self, x):
     """
