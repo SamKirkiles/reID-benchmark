@@ -54,4 +54,5 @@ class Market1501Dataset(Dataset):
 def pil_loader(path):
     with open(path, 'rb') as f:
         img = Image.open(f)
+        img = img.resize((256, 128))
         return img.convert('RGB')

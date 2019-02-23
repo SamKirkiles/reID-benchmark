@@ -18,7 +18,7 @@ from datasets.data_market1501 import Market1501Dataset
 
 def main():
 
-	query_disp_choice = 200
+	query_disp_choice = 800
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
