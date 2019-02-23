@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 import os
+import numpy as np
 class Market1501Dataset(Dataset):
 
 	def __init__(self, path=None,transform=None):
