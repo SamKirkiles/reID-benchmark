@@ -35,6 +35,7 @@ def main():
 
 	# Add preprocessing stops here
 	#Mean: [0.486, 0.459, 0.408],[0.229, 0.224, 0.225]
+	#0.237232779097
 	preprocessing = transforms.Compose([
 			transforms.ToTensor(),
 			transforms.Normalize([0.408, 0.459, 0.486],[0.225, 0.224, 0.229])])
@@ -80,12 +81,10 @@ def main():
 	print("Query Person ID: " + str(query_pid[query_disp_choice]))
 	print("Top 20 gallery matches: ")
 
-	avg_precision = np.zeros((query_features.shape[0],1))
+	avg_precision = np.zeros(query_features.shape[0])
+	r1 = []
 
 	sorted_ind = np.argsort(query_distances,axis=1)
-	argsorted = sorted_ind[query_disp_choice]
-
-	print(np.array(test_pid)[argsorted][0:20])
 
 	for k in range(0,query_distances.shape[0]):
 		
@@ -94,6 +93,19 @@ def main():
 		junk_images_cam = np.where(np.array(test_cam)[sorted_ind[k]] == query_cam[k])[0]
 		junk_images = np.concatenate((junk_images_pid,junk_images_cam))
 		good_images = np.delete(np.arange(len(test_pid)),junk_images)
+		"""
+		print(query_cam[k])
+		print(query_pid[k])
+		print("first good images: " +  str(np.array(test_path)[sorted_ind][k][good_images][0:20]))
+
+		print("first all images: " + str(np.array(test_path)[sorted_ind][k][0:20]))
+		"""
+		if np.array(test_pid)[sorted_ind[k]][good_images][0] == query_pid[k]:
+			r1.append(1)
+		else:
+			r1.append(0)
+
+		avg_precision[k] = calculate_ap()
 
 		if query_disp_choice == k:
 			result_paths = np.array(test_path)[sorted_ind][k][good_images][0:20]
@@ -105,7 +117,7 @@ def main():
 
 	# Calculate average precision for each query image
 
-	print("mAP:"+ str(np.mean(avg_precision)) +" %")
+	print("mAP:"+ str(np.mean(avg_precision)) +" %" + " rank 1: "+ str(np.mean(np.array(r1))))
 
 
 def generate_features(model=None, loader=None,save_path=None):
@@ -139,7 +151,9 @@ def generate_features(model=None, loader=None,save_path=None):
 			pickle.dump( (features,pid,cam,path), open( save_path, "wb" ) )
 
 	return features,pid,cam,path
-
+# TODO
+def calculate_ap():
+	return 0
 
 def display(query,gallery,dataset_dir):
 
