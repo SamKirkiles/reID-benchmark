@@ -18,7 +18,7 @@ from datasets.data_market1501 import Market1501Dataset
 
 def main():
 
-	query_disp_choice = 800
+	query_disp_choice = 8
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
@@ -34,9 +34,10 @@ def main():
 	model = ReIDModel(version='huanghoujing')
 
 	# Add preprocessing stops here
+	#Mean: [0.486, 0.459, 0.408],[0.229, 0.224, 0.225]
 	preprocessing = transforms.Compose([
 			transforms.ToTensor(),
-			transforms.Normalize([0.486, 0.459, 0.408],[0.229, 0.224, 0.225])])
+			transforms.Normalize([0.408, 0.459, 0.486],[0.225, 0.224, 0.229])])
 
 	query_dataset = Market1501Dataset(
 		dataset_dir+"/query",
@@ -81,22 +82,26 @@ def main():
 
 	avg_precision = np.zeros((query_features.shape[0],1))
 
-	argsorted = np.argsort(query_distances,axis=1)[query_disp_choice]
+	sorted_ind = np.argsort(query_distances,axis=1)
+	argsorted = sorted_ind[query_disp_choice]
 
 	print(np.array(test_pid)[argsorted][0:20])
 
+	for k in range(0,query_distances.shape[0]):
+		
+		# junk images with pid == -1 after sorting
+		junk_images_pid = np.where(np.array(test_pid)[sorted_ind[k]] == -1)[0]
+		junk_images_cam = np.where(np.array(test_cam)[sorted_ind[k]] == query_cam[k])[0]
+		junk_images = np.concatenate((junk_images_pid,junk_images_cam))
+		good_images = np.delete(np.arange(len(test_pid)),junk_images)
 
-	result_paths = []
-	result_pid = []
-	result_cam = []
-
-	for x in range(0,20):
-		result_paths.append(test_path[argsorted[x]])
-		result_pid.append(test_pid[argsorted[x]])
-		result_cam.append(test_cam[argsorted[x]])
+		if query_disp_choice == k:
+			result_paths = np.array(test_path)[sorted_ind][k][good_images][0:20]
+			result_pid = np.array(test_pid)[sorted_ind][k][good_images][0:20]
+			result_cam = np.array(test_cam)[sorted_ind][k][good_images][0:20]
 
 
-	display(query_path[query_disp_choice],(result_paths,result_pid,result_cam),dataset_dir)
+			display(query_path[query_disp_choice],(result_paths,result_pid,result_cam),dataset_dir)
 
 	# Calculate average precision for each query image
 
