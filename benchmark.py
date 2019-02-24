@@ -18,7 +18,7 @@ from datasets.data_market1501 import Market1501Dataset
 
 def main():
 
-	query_disp_choice = 8
+	query_disp_choice = 6
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
@@ -38,7 +38,7 @@ def main():
 	#0.237232779097
 	preprocessing = transforms.Compose([
 			transforms.ToTensor(),
-			transforms.Normalize([0.408, 0.459, 0.486],[0.225, 0.224, 0.229])])
+			transforms.Normalize([0.486, 0.459, 0.408],[0.229, 0.224, 0.225])])
 
 	query_dataset = Market1501Dataset(
 		dataset_dir+"/query",
@@ -93,13 +93,7 @@ def main():
 		junk_images_cam = np.where(np.array(test_cam)[sorted_ind[k]] == query_cam[k])[0]
 		junk_images = np.concatenate((junk_images_pid,junk_images_cam))
 		good_images = np.delete(np.arange(len(test_pid)),junk_images)
-		"""
-		print(query_cam[k])
-		print(query_pid[k])
-		print("first good images: " +  str(np.array(test_path)[sorted_ind][k][good_images][0:20]))
-
-		print("first all images: " + str(np.array(test_path)[sorted_ind][k][0:20]))
-		"""
+				
 		if np.array(test_pid)[sorted_ind[k]][good_images][0] == query_pid[k]:
 			r1.append(1)
 		else:
