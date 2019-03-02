@@ -25,7 +25,7 @@ def main():
 	gallery_save_path = "gallery_features.p"
 
 	# Change this to your unzipped Market1501
-	dataset_dir ='/home/skirki/Desktop/Market-1501/raw/Market-1501-v15.09.15'
+	dataset_dir ='data/Market-1501-v15.09.15'
 
 
 	print("Starting Evaluation")
@@ -33,20 +33,13 @@ def main():
 	#ReIDModel change version for different model eval
 	model = ReIDModel(version='huanghoujing')
 
-	# Add preprocessing stops here
-	#Mean: [0.486, 0.459, 0.408],[0.229, 0.224, 0.225]
-	#0.237232779097
-	preprocessing = transforms.Compose([
-			transforms.ToTensor(),
-			transforms.Normalize([0.486, 0.459, 0.408],[0.229, 0.224, 0.225])])
-
 	query_dataset = Market1501Dataset(
 		dataset_dir+"/query",
-		preprocessing)
+		None)
 
 	test_dataset = Market1501Dataset(
 		dataset_dir+"/bounding_box_test",
-		preprocessing)
+		None)
 
 
 	query_loader = DataLoader(query_dataset,batch_size=16,shuffle=False)

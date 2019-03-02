@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 import os
 import numpy as np
+from preprocessimage import PreProcessIm
 class Market1501Dataset(Dataset):
 
 	def __init__(self, path=None,transform=None):
@@ -17,9 +18,11 @@ class Market1501Dataset(Dataset):
 			if file.endswith(".jpg"):
 				self.sample_paths.append(file)
 		self.sample_paths.sort()
+	
+		self.preprocessor = PreProcessIm(resize_h_w=(256, 128),im_mean=[0.486, 0.459, 0.408],im_std=[0.229, 0.224, 0.225])
 
 	def __getitem__(self,index):
-		sample = pil_loader(os.path.join(self.path,self.sample_paths[index]))
+		sample = self.pil_loader(os.path.join(self.path,self.sample_paths[index]))
 		
 		# The path looks like this -1_c2s1_015101_00.jpg
 
@@ -51,7 +54,8 @@ class Market1501Dataset(Dataset):
 		return len(self.sample_paths)
 
 
-def pil_loader(path):
-	with open(path, 'rb') as f:
-		img = Image.open(f)
-		return img.convert('RGB')
+	def pil_loader(self,path):
+		with open(path, 'rb') as f:
+			img = Image.open(f)
+			img.convert('RGB')
+			return self.preprocessor(np.array(img))
