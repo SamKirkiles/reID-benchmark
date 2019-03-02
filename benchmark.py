@@ -1,4 +1,3 @@
-
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
@@ -18,7 +17,7 @@ from datasets.data_market1501 import Market1501Dataset
 
 def main():
 
-	query_disp_choice = 6
+	query_disp_choice = 455
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
@@ -92,14 +91,14 @@ def main():
 		else:
 			r1.append(0)
 
-		avg_precision[k] = calculate_ap()
-
+		binary_labels = np.array(test_pid)[sorted_ind[k]][good_images] == query_pid[k]
+		avg_precision[k] = calculate_ap(binary_labels)
+		
 		if query_disp_choice == k:
 			result_paths = np.array(test_path)[sorted_ind][k][good_images][0:20]
 			result_pid = np.array(test_pid)[sorted_ind][k][good_images][0:20]
 			result_cam = np.array(test_cam)[sorted_ind][k][good_images][0:20]
-
-
+			
 			display(query_path[query_disp_choice],(result_paths,result_pid,result_cam),dataset_dir)
 
 	# Calculate average precision for each query image
@@ -138,13 +137,21 @@ def generate_features(model=None, loader=None,save_path=None):
 			pickle.dump( (features,pid,cam,path), open( save_path, "wb" ) )
 
 	return features,pid,cam,path
-# TODO
-def calculate_ap():
-	return 0
+	
+def calculate_ap(binary_labels):
+	
+	ap = 0
+	num_correct =0
+	#Calculate AP@75
+	for i in range(75):
+		num_correct += binary_labels[i]
+		ap += (num_correct/float(i+1)) * binary_labels[i] *(1.0/np.sum(binary_labels))
+	return ap
 
 def display(query,gallery,dataset_dir):
 
 	gallery_path, gallery_pid, gallery_cam = gallery
+	print(query)
 	command = "montage -label query " + dataset_dir+"/query/"+query
 	
 	for i, image in enumerate(gallery_path):
