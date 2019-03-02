@@ -14,10 +14,11 @@ from huanghoujing import HuangHoujingPytorch
 from reid_model import ReIDModel
 from scipy.spatial import distance
 from datasets.data_market1501 import Market1501Dataset
+from re_ranking  import re_ranking
 
 def main():
 
-	query_disp_choice = 455
+	query_disp_choice = 232
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
@@ -25,7 +26,6 @@ def main():
 
 	# Change this to your unzipped Market1501
 	dataset_dir ='data/Market-1501-v15.09.15'
-
 
 	print("Starting Evaluation")
 
@@ -52,20 +52,20 @@ def main():
 	test_features, test_pid, test_cam, test_path = generate_features(model,test_loader, gallery_save_path)
 	print("Done.")
 
-
 	print("Calculating distances")
-
 
 	#Euclidean distance between each query feature vector and each gallery feature vector
 	if dist_save_path is not None and os.path.exists(dist_save_path):
 		print("Loading distance matrix from save: " + dist_save_path)
-		query_distances =  pickle.load( open( dist_save_path, "rb" ) )
+		q_g_distances,q_q_distances,g_g_distances =  pickle.load( open( dist_save_path, "rb" ) )
 	else:
 		print("No save detected. Calculauting new distance matrix.")
-		query_distances = distance.cdist(query_features,test_features,'euclidean')
+		q_g_distances = distance.cdist(query_features,test_features,'euclidean')
+		q_q_distances = distance.cdist(query_features,query_features,'euclidean')
+		g_g_distances = distance.cdist(test_features,test_features,'euclidean')
 		if dist_save_path is not None:
 			print("Saving features...")
-			pickle.dump( query_distances, open( dist_save_path, "wb" ) )
+			pickle.dump( (q_g_distances,q_q_distances,g_g_distances), open( dist_save_path, "wb" ) )
 		else:
 			print("Could not save features as path was not specified.")
 
@@ -76,9 +76,15 @@ def main():
 	avg_precision = np.zeros(query_features.shape[0])
 	r1 = []
 
-	sorted_ind = np.argsort(query_distances,axis=1)
+	sorted_ind = np.argsort(q_g_distances,axis=1)
+	
+	print("Re-Ranking...")
+	re_ranked_q_g_distances = re_ranking(q_g_distances,q_q_distances,g_g_distances)
+	print("Done.")
+	
+	sorted_ind = np.argsort(re_ranked_q_g_distances,axis=1)
 
-	for k in range(0,query_distances.shape[0]):
+	for k in range(0,re_ranked_q_g_distances.shape[0]):
 		
 		# junk images with pid == -1 after sorting
 		junk_images_pid = np.where(np.array(test_pid)[sorted_ind[k]] == -1)[0]
@@ -103,7 +109,7 @@ def main():
 
 	# Calculate average precision for each query image
 
-	print("mAP:"+ str(np.mean(avg_precision)) +" %" + " rank 1: "+ str(np.mean(np.array(r1))))
+	print("mAP:"+ str(round(np.mean(avg_precision),4)*100) +"%" + " rank 1: "+ str(round(np.mean(np.array(r1)),4)*100) +"%" )
 
 
 def generate_features(model=None, loader=None,save_path=None):
@@ -157,9 +163,7 @@ def display(query,gallery,dataset_dir):
 	for i, image in enumerate(gallery_path):
 		command += " -label gallery_" + str(gallery_pid[i]) + "_cam_" + str(str(gallery_cam[i])) + " " + dataset_dir + "/bounding_box_test/" + image
 	command += " output.jpg"
-	print(command)
+	print("Saved display output to output.jpg")
 	os.system(command)
-	os.system("viewnior output.jpg")
-
 
 if __name__ == "__main__": main()
