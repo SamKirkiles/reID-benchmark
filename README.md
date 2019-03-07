@@ -5,7 +5,11 @@ A general framework for benchmarking re-identification models.
 
 #### Current Models Supported
 * Aligned ReID *(huanghoujing)*
-  mAP: 78.34% Rank1: 90.56%
+
+| Benchmark    | Market1501   |Cuhk03  |
+| ------------- |:-------------:| :-----:|
+| Aligned ReID without re-ranking| **mAP:** 78.34% **rank1:** 90.56%| **mAP:** - **rank 1:** - |
+| Aligned ReID with re-ranking| **mAP:** 89.37% **rank 1:** 93.02% | **mAP:** 17.47% **rank 1:** 15.21% |
 
 #### Current Datasets Supported
 * Market1501 [[Direct Link](http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip)]
