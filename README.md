@@ -11,6 +11,14 @@ A general framework for benchmarking re-identification models.
 | Aligned ReID without re-ranking| **mAP:** 78.34% **rank1:** 90.56%| **mAP:** - **rank 1:** - |
 | Aligned ReID with re-ranking| **mAP:** 89.37% **rank 1:** 93.02% | **mAP:** 17.47% **rank 1:** 15.21% |
 
+* Person_reID_baseline_pytorch (layumi)
+
+| Benchmark    | Market1501   |Cuhk03  |
+| ------------- |:-------------:| :-----:|
+| ReID without re-ranking| **mAP:** - **rank1:** -| **mAP:** - **rank 1:** - |
+| ReID with re-ranking| **mAP:** 86.59% **rank 1:** 92.07% | **mAP:** - **rank 1:** - |
+
+
 #### Current Datasets Supported
 * Market1501 [[Direct Link](http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip)]
 * CUHK-03 [[Google Drive](https://drive.google.com/file/d/1pBCIAGSZ81pgvqjC-lUHtl0OYV1icgkz/view)] 
