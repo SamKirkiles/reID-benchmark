@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 import os
 import numpy as np
-from preprocessimage import PreProcessIm
+from datasets.preprocessimage import PreProcessIm
 
 
 class Cuhk03Dataset(Dataset):

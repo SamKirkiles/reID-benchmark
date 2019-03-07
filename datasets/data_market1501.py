@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 import os
+from datasets.preprocessimage import PreProcessIm
 import numpy as np
-from preprocessimage import PreProcessIm
 
 
 class Market1501Dataset(Dataset):
