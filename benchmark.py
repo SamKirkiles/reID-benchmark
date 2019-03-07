@@ -8,7 +8,7 @@ import pickle
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 import numpy as np
- 
+import argparse
 from model_wrapper import ModelWrapper
 from huanghoujing import HuangHoujingPytorch
 from reid_model import ReIDModel
@@ -18,62 +18,70 @@ from datasets.data_cuhk03 import Cuhk03Dataset
 from re_ranking  import re_ranking
 
 def main():
-
+	
+	cfg = Config()
+	
 	query_disp_choice = 2
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
 	gallery_save_path = "gallery_features.p"
 
-	# Change this to your unzipped Market1501
-	#dataset_dir ='data/Market-1501-v15.09.15'
-	dataset_dir = 'data/cuhk03-np/labeled'
-
 	print("Starting Evaluation")
 
 	#ReIDModel change version for different model eval
-	model = ReIDModel(version='huanghoujing')
-
-	#query_dataset = Market1501Dataset(
-	#	dataset_dir+"/security_query",
-	#	None)
-
-	query_dataset = Cuhk03Dataset(
-		dataset_dir +"/query",
-		None)
-		
-	#test_dataset = Market1501Dataset(
-	#	dataset_dir+"/bounding_box_test",
-	#	None)
+	model = ReIDModel(version=cfg.model)
 	
-	test_dataset = Cuhk03Dataset(
-		dataset_dir+"/bounding_box_test",
-		None)
+	test_dataset,query_dataset = None,None
+	
+	# Load test and query datasets
+	if cfg.dataset == 'Market1501':
+		
+		dataset_dir ='data/Market-1501-v15.09.15'
+		
+		query_dataset = Market1501Dataset(
+			dataset_dir+"/query",
+			None)
+
+		test_dataset = Market1501Dataset(
+			dataset_dir+"/bounding_box_test",
+			None)
+	elif cfg.dataset == 'Cuhk03':
+		dataset_dir = 'data/cuhk03-np/labeled'
+		
+		query_dataset = Cuhk03Dataset(
+			dataset_dir +"/query",
+			None)
+		test_dataset = Cuhk03Dataset(
+			dataset_dir+"/bounding_box_test",
+			None)
+	else:
+		raise ValueError("Unknown dataset name")
 
 	query_loader = DataLoader(query_dataset,batch_size=16,shuffle=False)
 	test_loader = DataLoader(test_dataset,batch_size=16,shuffle=False)
 
 	print("Retreiving features for query...")
-	query_features, query_pid, query_cam, query_path = generate_features(model,query_loader,query_save_path)
+	query_features, query_pid, query_cam, query_path = generate_features(model,query_loader,query_save_path,cfg.use_save)
 	print("Done.")
 
 	print("Retreiving features for gallery")
-	test_features, test_pid, test_cam, test_path = generate_features(model,test_loader, gallery_save_path)
+	test_features, test_pid, test_cam, test_path = generate_features(model,test_loader, gallery_save_path,cfg.use_save)
 	print("Done.")
 
 	print("Calculating distances")
 
 	#Euclidean distance between each query feature vector and each gallery feature vector
-	if dist_save_path is not None and os.path.exists(dist_save_path):
+	if dist_save_path is not None and os.path.exists(dist_save_path) and cfg.use_save == True:
 		print("Loading distance matrix from save: " + dist_save_path)
 		q_g_distances,q_q_distances,g_g_distances =  pickle.load( open( dist_save_path, "rb" ) )
 	else:
-		print("No save detected. Calculauting new distance matrix.")
+		print("Save not detected or --use_save is False. Calculauting new distance matrix.")
 		q_g_distances = distance.cdist(query_features,test_features,'euclidean')
 		q_q_distances = distance.cdist(query_features,query_features,'euclidean')
 		g_g_distances = distance.cdist(test_features,test_features,'euclidean')
 		if dist_save_path is not None:
-			print("Saving features...")
+			print("Saving distances...")
 			pickle.dump( (q_g_distances,q_q_distances,g_g_distances), open( dist_save_path, "wb" ) )
 		else:
 			print("Could not save features as path was not specified.")
@@ -126,7 +134,7 @@ def main():
 	print("mAP:"+ str(round(np.mean(avg_precision),4)*100) +"%" + " rank 1: "+ str(round(np.mean(np.array(r1)),4)*100) +"%" )
 	print(avg_precision)
 
-def generate_features(model=None, loader=None,save_path=None):
+def generate_features(model=None, loader=None,save_path=None,use_save=True):
 
 	features = np.zeros((0,2048))
 	pid = []
@@ -134,11 +142,11 @@ def generate_features(model=None, loader=None,save_path=None):
 	path = []
 
 	# load from save if possible
-	if save_path is not None and os.path.exists(save_path):
+	if save_path is not None and os.path.exists(save_path) and use_save == True:
 		print("Loading features from save: " + save_path)
 		features,pid,cam,path =  pickle.load( open( save_path, "rb" ) )
 	else:
-		print("No save detected. Generating new features.")
+		print("Save not detected or --use_save is False. Generating new features.")
 		for i,samples in enumerate(loader):
 
 			images, pids, cameras, paths = samples['image'], samples['pid'], samples['camera'], samples['path']
@@ -179,5 +187,29 @@ def display(query,gallery,dataset_dir):
 	command += " output.jpg"
 	print("Saved display output to output.jpg")
 	os.system(command)
+	
+	
+class Config():
+
+	def __init__(self):
+
+		parser = argparse.ArgumentParser()
+		parser.add_argument('--model', type=str, default='huanghoujing')
+		parser.add_argument('--dataset',type=str, default='Market1501')
+		parser.add_argument('--use_save',type=self.str2bool,default=True)
+		
+		args = parser.parse_known_args()[0]
+
+		self.model = args.model
+		self.dataset = args.dataset
+		self.use_save = args.use_save
+	def str2bool(self,v):
+	    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+	        return True
+	    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+	        return False
+	    else:
+	        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 if __name__ == "__main__": main()

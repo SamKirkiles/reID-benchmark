@@ -2,7 +2,7 @@
 
 class ModelWrapper():
 
-	def __init__(self, version='huanghoujing'):
+	def __init__(self):
 		
 		raise Exception("Cannot instantiate abstract class.")
 
