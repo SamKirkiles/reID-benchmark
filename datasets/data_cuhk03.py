@@ -7,23 +7,25 @@ import numpy as np
 from preprocessimage import PreProcessIm
 
 
-class Market1501Dataset(Dataset):
+class Cuhk03Dataset(Dataset):
 
 	def __init__(self, path=None,transform=None):
 
 		self.path = path
 		self.transform = transform
-		
+
 		self.sample_paths = []
-		
+			
 		for file in os.listdir(path):
 			if file.endswith(".jpg"):
 				self.sample_paths.append(file)
+				
 		self.sample_paths.sort()
-	
+
 		self.preprocessor = PreProcessIm(resize_h_w=(256, 128),im_mean=[0.486, 0.459, 0.408],im_std=[0.229, 0.224, 0.225])
 
 	def __getitem__(self,index):
+		
 		sample = self.pil_loader(os.path.join(self.path,self.sample_paths[index]))
 		
 		# The path looks like this -1_c2s1_015101_00.jpg
@@ -31,14 +33,10 @@ class Market1501Dataset(Dataset):
 		if (self.sample_paths[index][0:2] != '-1'):
 			pid = int(self.sample_paths[index][0:4])
 			camera = int(self.sample_paths[index][6:7])
-			sequence = int(self.sample_paths[index][8:9])
-			frame = int(self.sample_paths[index][10:16])
 		else:
 			#junk image 
 			pid = int(self.sample_paths[index][0:2])
 			camera = int(self.sample_paths[index][4:5])
-			sequence = int(self.sample_paths[index][6:7])
-			frame = int(self.sample_paths[index][8:14])
 
 		if self.transform is not None:
 			sample = self.transform(sample)
@@ -47,8 +45,6 @@ class Market1501Dataset(Dataset):
 			'image':sample, 
 			'pid':pid, 
 			'camera':camera, 
-			'sequence':sequence,
-			'frame': frame,
 			'path':self.sample_paths[index]
 			}
 

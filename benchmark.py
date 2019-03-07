@@ -8,38 +8,47 @@ import pickle
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
 import numpy as np
-from model import Model 
+ 
 from model_wrapper import ModelWrapper
 from huanghoujing import HuangHoujingPytorch
 from reid_model import ReIDModel
 from scipy.spatial import distance
 from datasets.data_market1501 import Market1501Dataset
+from datasets.data_cuhk03 import Cuhk03Dataset
 from re_ranking  import re_ranking
 
 def main():
 
-	query_disp_choice = 232
+	query_disp_choice = 2
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
 	gallery_save_path = "gallery_features.p"
 
 	# Change this to your unzipped Market1501
-	dataset_dir ='data/Market-1501-v15.09.15'
+	#dataset_dir ='data/Market-1501-v15.09.15'
+	dataset_dir = 'data/cuhk03-np/labeled'
 
 	print("Starting Evaluation")
 
 	#ReIDModel change version for different model eval
 	model = ReIDModel(version='huanghoujing')
 
-	query_dataset = Market1501Dataset(
-		dataset_dir+"/query",
-		None)
+	#query_dataset = Market1501Dataset(
+	#	dataset_dir+"/security_query",
+	#	None)
 
-	test_dataset = Market1501Dataset(
+	query_dataset = Cuhk03Dataset(
+		dataset_dir +"/query",
+		None)
+		
+	#test_dataset = Market1501Dataset(
+	#	dataset_dir+"/bounding_box_test",
+	#	None)
+	
+	test_dataset = Cuhk03Dataset(
 		dataset_dir+"/bounding_box_test",
 		None)
-
 
 	query_loader = DataLoader(query_dataset,batch_size=16,shuffle=False)
 	test_loader = DataLoader(test_dataset,batch_size=16,shuffle=False)
@@ -69,7 +78,6 @@ def main():
 		else:
 			print("Could not save features as path was not specified.")
 
-
 	print("Query Person ID: " + str(query_pid[query_disp_choice]))
 	print("Top 20 gallery matches: ")
 
@@ -82,7 +90,12 @@ def main():
 	re_ranked_q_g_distances = re_ranking(q_g_distances,q_q_distances,g_g_distances)
 	print("Done.")
 	
+	
+	
 	sorted_ind = np.argsort(re_ranked_q_g_distances,axis=1)
+	print(re_ranked_q_g_distances[0][sorted_ind[0]])
+	print(re_ranked_q_g_distances[1][sorted_ind[1]])
+	print(re_ranked_q_g_distances[2][sorted_ind[2]])
 
 	for k in range(0,re_ranked_q_g_distances.shape[0]):
 		
@@ -104,13 +117,14 @@ def main():
 			result_paths = np.array(test_path)[sorted_ind][k][good_images][0:20]
 			result_pid = np.array(test_pid)[sorted_ind][k][good_images][0:20]
 			result_cam = np.array(test_cam)[sorted_ind][k][good_images][0:20]
+			result_dist = re_ranked_q_g_distances[k][sorted_ind[k]][good_images][0:20]
 			
-			display(query_path[query_disp_choice],(result_paths,result_pid,result_cam),dataset_dir)
+			display(query_path[query_disp_choice],(result_paths,result_pid,result_cam,result_dist),dataset_dir)
 
 	# Calculate average precision for each query image
 
 	print("mAP:"+ str(round(np.mean(avg_precision),4)*100) +"%" + " rank 1: "+ str(round(np.mean(np.array(r1)),4)*100) +"%" )
-
+	print(avg_precision)
 
 def generate_features(model=None, loader=None,save_path=None):
 
@@ -127,7 +141,7 @@ def generate_features(model=None, loader=None,save_path=None):
 		print("No save detected. Generating new features.")
 		for i,samples in enumerate(loader):
 
-			images, pids, cameras, sequences, frames, paths = samples['image'], samples['pid'], samples['camera'], samples['sequence'], samples['frame'], samples['path']
+			images, pids, cameras, paths = samples['image'], samples['pid'], samples['camera'], samples['path']
 
 			forward = model.forward(images.cuda())[0]
 			batch_size = images.shape[0]
@@ -156,12 +170,12 @@ def calculate_ap(binary_labels):
 
 def display(query,gallery,dataset_dir):
 
-	gallery_path, gallery_pid, gallery_cam = gallery
-	print(query)
-	command = "montage -label query " + dataset_dir+"/query/"+query
+	gallery_path, gallery_pid, gallery_cam,gallery_dist = gallery
+
+	command = "montage -label query_1503_cam_7 " + dataset_dir+"/query/"+query
 	
 	for i, image in enumerate(gallery_path):
-		command += " -label gallery_" + str(gallery_pid[i]) + "_cam_" + str(str(gallery_cam[i])) + " " + dataset_dir + "/bounding_box_test/" + image
+		command += " -label \"gallery_" + str(gallery_pid[i]) + "_cam_" + str(str(gallery_cam[i])) + "\ndist_" + str(round(gallery_dist[i],3)) + "\" " + dataset_dir + "/bounding_box_test/" + image
 	command += " output.jpg"
 	print("Saved display output to output.jpg")
 	os.system(command)

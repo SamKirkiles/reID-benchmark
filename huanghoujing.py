@@ -1,6 +1,7 @@
 import torch
 from model_wrapper import ModelWrapper
-from model import Model 
+
+from models.AlignedReID_huanghoujing.aligned_reid.model import Model
 import numpy as np
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
