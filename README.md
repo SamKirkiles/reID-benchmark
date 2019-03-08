@@ -19,11 +19,18 @@ A general framework for benchmarking re-identification models.
 | ReID with re-ranking| **mAP:** 86.59% **rank 1:** 92.07% | **mAP:** 18.98% **rank 1:** 17.43% |
 
 #### DareNet *(mileyan)* [[Repo](https://github.com/mileyan/DARENet)]
-   ###### Versions to be tested: Market1501 and Cuhk03
+   ###### Trained on Market1501
 | Benchmark    | Market1501   |Cuhk03  |
 | ------------- |:-------------:| :-----:|
 | ReID without re-ranking| **mAP:** - **rank1:** -| **mAP:** - **rank 1:** - |
 | ReID with re-ranking| **mAP:** 86.02% **rank 1:** 90.5% | **mAP:** 10.29% **rank 1:** 8.70% |
+
+   ###### Trained on Cuhk03
+   | Benchmark    | Market1501   |Cuhk03  |
+| ------------- |:-------------:| :-----:|
+| ReID without re-ranking| **mAP:** - **rank1:** -| **mAP:** - **rank 1:** - |
+| ReID with re-ranking| **mAP:** - **rank 1:** - | **mAP:** 78.46% **rank 1:** 75.79% |
+
 
 #### Current Datasets Supported
 * Market1501 [[Direct Link](http://188.138.127.15:81/Datasets/Market-1501-v15.09.15.zip)]
