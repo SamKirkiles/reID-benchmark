@@ -45,5 +45,6 @@ Run `pip install -r requirements.txt` to download necessary dependencies. It is 
 Unzip your desired dataset using the download links provided above into the `/datasets` folder. If using a dataset from a source other than the links above it must be converted to the [Market1501 format](http://www.liangzheng.org/Project/project_reid.html).
 #### Clone ReID Model Into `/models`
 To start benchmarking, a model and associated wrapper class must be provided. Note that only models written in Python 3 are supported. 
-#### Create Wrapper Class
+#### Create Subclass of `ModelWrapper`
 #### Run Benchmark
+`python benchmark.py --use_save false --model=huanghoujing --dataset=Market1501`
