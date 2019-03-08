@@ -38,7 +38,7 @@ A general framework for benchmarking re-identification models.
 
 Unzip each datset into the `/data` directory. Datasets must be in Market1501 format to be used in this package. 
 
-### Getting Started
+### Getting Started (Not complete)
 #### Install Dependenceies
 Run `pip install -r requirements.txt` to download necessary dependencies. It is recomended to use virtualenv to manage dependencies. 
 #### Download Datasets
