@@ -3,18 +3,18 @@ import torch
 import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 import os
-from datasets.preprocessimage import PreProcessIm
 
 import numpy as np
 
 
 class Market1501Dataset(Dataset):
 
-	def __init__(self, path=None,transform=None):
+	def __init__(self, path=None,transform=None,preprocessor=None):
 
 		self.path = path
 		self.transform = transform
-		
+		self.preprocessor = preprocessor
+
 		self.sample_paths = []
 		
 		for file in os.listdir(path):
@@ -22,7 +22,6 @@ class Market1501Dataset(Dataset):
 				self.sample_paths.append(file)
 		self.sample_paths.sort()
 	
-		self.preprocessor = PreProcessIm(resize_h_w=(256, 128),im_mean=[0.486, 0.459, 0.408],im_std=[0.229, 0.224, 0.225])
 
 	def __getitem__(self,index):
 		sample = self.pil_loader(os.path.join(self.path,self.sample_paths[index]))
@@ -61,4 +60,7 @@ class Market1501Dataset(Dataset):
 		with open(path, 'rb') as f:
 			img = Image.open(f)
 			img.convert('RGB')
-			return self.preprocessor(np.array(img))
+			if self.preprocessor is not None:
+				return self.preprocessor(np.array(img))
+			else:
+				return img

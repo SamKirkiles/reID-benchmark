@@ -4,15 +4,14 @@ import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 import os
 import numpy as np
-from datasets.preprocessimage import PreProcessIm
-
 
 class Cuhk03Dataset(Dataset):
 
-	def __init__(self, path=None,transform=None):
+	def __init__(self, path=None,transform=None,preprocessor=None):
 
 		self.path = path
 		self.transform = transform
+		self.preprocessor = preprocessor
 
 		self.sample_paths = []
 			
@@ -22,7 +21,6 @@ class Cuhk03Dataset(Dataset):
 				
 		self.sample_paths.sort()
 
-		self.preprocessor = PreProcessIm(resize_h_w=(256, 128),im_mean=[0.486, 0.459, 0.408],im_std=[0.229, 0.224, 0.225])
 
 	def __getitem__(self,index):
 		
@@ -56,4 +54,7 @@ class Cuhk03Dataset(Dataset):
 		with open(path, 'rb') as f:
 			img = Image.open(f)
 			img.convert('RGB')
-			return self.preprocessor(np.array(img))
+			if self.preprocessor is not None:
+				return self.preprocessor(np.array(img))
+			else:
+				return img

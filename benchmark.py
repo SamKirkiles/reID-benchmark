@@ -21,7 +21,8 @@ def main():
 	
 	cfg = Config()
 	
-	query_disp_choice = 2
+	# The images which will be visualized
+	query_disp_choice = [33]
 
 	dist_save_path = "distance_matrix.p"
 	query_save_path = "query_features.p"
@@ -41,25 +42,29 @@ def main():
 		
 		query_dataset = Market1501Dataset(
 			dataset_dir+"/query",
-			None)
+			model.transform,
+			model.preprocessor)
 
 		test_dataset = Market1501Dataset(
 			dataset_dir+"/bounding_box_test",
-			None)
+			model.transform,
+			model.preprocessor)
 	elif cfg.dataset == 'Cuhk03':
 		dataset_dir = 'data/cuhk03-np/labeled'
 		
 		query_dataset = Cuhk03Dataset(
 			dataset_dir +"/query",
-			None)
+			model.transform,
+			model.preprocessor)
 		test_dataset = Cuhk03Dataset(
 			dataset_dir+"/bounding_box_test",
-			None)
+			model.transform,
+			model.preprocessor)
 	else:
 		raise ValueError("Unknown dataset name")
 
-	query_loader = DataLoader(query_dataset,batch_size=16,shuffle=False)
-	test_loader = DataLoader(test_dataset,batch_size=16,shuffle=False)
+	query_loader = DataLoader(query_dataset,batch_size=16,num_workers=4,pin_memory=True,shuffle=False)
+	test_loader = DataLoader(test_dataset,batch_size=16,num_workers=4,pin_memory=True,shuffle=False)
 
 	print("Retreiving features for query...")
 	query_features, query_pid, query_cam, query_path = generate_features(model,query_loader,query_save_path,cfg.use_save)
@@ -86,19 +91,18 @@ def main():
 		else:
 			print("Could not save features as path was not specified.")
 
-	print("Query Person ID: " + str(query_pid[query_disp_choice]))
-	print("Top 20 gallery matches: ")
-
 	avg_precision = np.zeros(query_features.shape[0])
 	r1 = []
 
 	sorted_ind = np.argsort(q_g_distances,axis=1)
 	
-	print("Re-Ranking...")
-	re_ranked_q_g_distances = re_ranking(q_g_distances,q_q_distances,g_g_distances)
-	print("Done.")
-	
-	
+	if cfg.rerank == True:
+		print("Re-Ranking...")
+		re_ranked_q_g_distances = re_ranking(q_g_distances,q_q_distances,g_g_distances)
+		print("Done.")
+		
+	else:
+		re_ranked_q_g_distances = q_g_distances
 	
 	sorted_ind = np.argsort(re_ranked_q_g_distances,axis=1)
 	print(re_ranked_q_g_distances[0][sorted_ind[0]])
@@ -121,13 +125,13 @@ def main():
 		binary_labels = np.array(test_pid)[sorted_ind[k]][good_images] == query_pid[k]
 		avg_precision[k] = calculate_ap(binary_labels)
 		
-		if query_disp_choice == k:
+		if k in query_disp_choice:
 			result_paths = np.array(test_path)[sorted_ind][k][good_images][0:20]
 			result_pid = np.array(test_pid)[sorted_ind][k][good_images][0:20]
 			result_cam = np.array(test_cam)[sorted_ind][k][good_images][0:20]
 			result_dist = re_ranked_q_g_distances[k][sorted_ind[k]][good_images][0:20]
-			
-			display(query_path[query_disp_choice],(result_paths,result_pid,result_cam,result_dist),dataset_dir)
+			query_disp = query_pid[k], query_path[k], query_cam[k]
+			display(query_disp,(result_paths,result_pid,result_cam,result_dist),dataset_dir)
 
 	# Calculate average precision for each query image
 
@@ -151,10 +155,9 @@ def generate_features(model=None, loader=None,save_path=None,use_save=True):
 
 			images, pids, cameras, paths = samples['image'], samples['pid'], samples['camera'], samples['path']
 
-			forward = model.forward(images.cuda())[0]
+			forward = model.forward(images.cuda())
 			batch_size = images.shape[0]
 			np_batch = forward.data.cpu().numpy()
-
 			features = np.concatenate((features,np_batch),0)
 			pid.extend(pids.data.cpu().numpy().tolist())
 			cam.extend(cameras.data.cpu().numpy().tolist())
@@ -178,14 +181,16 @@ def calculate_ap(binary_labels):
 
 def display(query,gallery,dataset_dir):
 
+	query_pid, query_path, query_cam = query
 	gallery_path, gallery_pid, gallery_cam,gallery_dist = gallery
 
-	command = "montage -label query_1503_cam_7 " + dataset_dir+"/query/"+query
+	command = "montage -label query_"+str(query_pid)+"_cam_"+str(query_cam) + " " + dataset_dir+"/query/"+query_path
 	
 	for i, image in enumerate(gallery_path):
-		command += " -label \"gallery_" + str(gallery_pid[i]) + "_cam_" + str(str(gallery_cam[i])) + "\ndist_" + str(round(gallery_dist[i],3)) + "\" " + dataset_dir + "/bounding_box_test/" + image
-	command += " output.jpg"
-	print("Saved display output to output.jpg")
+
+		command += " -label \"" +"gallery_" + str(gallery_pid[i]) + "_cam_" + str(str(gallery_cam[i])) + "\ndist_" + str(round(gallery_dist[i],3)) + "\" " + dataset_dir + "/bounding_box_test/" + image
+	command += " ./output/"+os.path.splitext(query_path)[0]+"_output.jpg"
+	print("Saved display output /output/")
 	os.system(command)
 	
 	
@@ -197,12 +202,15 @@ class Config():
 		parser.add_argument('--model', type=str, default='huanghoujing')
 		parser.add_argument('--dataset',type=str, default='Market1501')
 		parser.add_argument('--use_save',type=self.str2bool,default=True)
-		
+		parser.add_argument('--rerank',type=self.str2bool,default=True)
+
 		args = parser.parse_known_args()[0]
 
 		self.model = args.model
 		self.dataset = args.dataset
 		self.use_save = args.use_save
+		self.rerank = args.rerank
+		
 	def str2bool(self,v):
 	    if v.lower() in ('yes', 'true', 't', 'y', '1'):
 	        return True
