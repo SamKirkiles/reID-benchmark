@@ -29,7 +29,7 @@ A general framework for benchmarking re-identification models.
    | Benchmark    | Market1501   |Cuhk03  |
 | ------------- |:-------------:| :-----:|
 | ReID without re-ranking| **mAP:** - **rank1:** -| **mAP:** - **rank 1:** - |
-| ReID with re-ranking| **mAP:** - **rank 1:** - | **mAP:** 78.46% **rank 1:** 75.79% |
+| ReID with re-ranking| **mAP:** 14.91% **rank 1:** 31.38% | **mAP:** 78.46% **rank 1:** 75.79% |
 
 
 #### Current Datasets Supported
