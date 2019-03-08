@@ -47,4 +47,4 @@ Unzip your desired dataset using the download links provided above into the `/da
 To start benchmarking, a model and associated wrapper class must be provided. Note that only models written in Python 3 are supported. 
 #### Create Subclass of `ModelWrapper`
 #### Run Benchmark
-`python benchmark.py --use_save false --model=huanghoujing --dataset=Market1501`
+`python benchmark.py --use_save false --model=huanghoujing --dataset=Market1501 --rerank=true`
